@@ -1,6 +1,8 @@
 package org.example.library.controllers;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.example.library.models.DTO.UserLoginDTO;
@@ -19,6 +21,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 import org.example.library.repositories.RoleRepository;
 
@@ -123,5 +126,54 @@ public class UserController {
             }
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        logger.info("Начало процесса выхода");
+
+        // 1. Получаем текущую аутентификацию
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            logger.info("Выход пользователя: {}", auth.getName());
+
+            // 2. Очищаем контекст безопасности
+            new SecurityContextLogoutHandler().logout(request, response, auth);
+
+            // 3. Инвалидируем сессию
+            HttpSession session = request.getSession(false);
+            if (session != null) {
+                logger.info("Инвалидация сессии с ID: {}", session.getId());
+                session.invalidate();
+            }
+
+            // 4. Очищаем контекст
+            SecurityContextHolder.clearContext();
+
+            // 5. Удаляем cookies
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (cookie.getName().equals("JSESSIONID")) {
+                        logger.info("Удаление cookie JSESSIONID");
+                        cookie.setValue("");
+                        cookie.setPath("/");
+                        cookie.setMaxAge(0);
+                        response.addCookie(cookie);
+                    }
+                }
+            }
+
+            // 6. Добавляем дополнительные заголовки для очистки кэша
+            response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setHeader("Expires", "0");
+
+            logger.info("Выход завершен успешно");
+            return ResponseEntity.ok().body("Вы успешно вышли из системы");
+        } else {
+            logger.info("Нет активной аутентификации для выхода");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Не удалось выйти");
+        }
     }
 }

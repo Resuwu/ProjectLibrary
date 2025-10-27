@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактировать книгу</title>
     <link rel="stylesheet" href="/addbook.css"> <!-- Подключение CSS -->
+    <link rel="stylesheet" href="/navbar.css">
 </head>
 <body>
+<div th:replace="~{navbar :: navbar}"></div>
 <h1>Редактировать книгу</h1>
 <div id="message"></div>
+<div class="container">
 <form id="editBookForm">
     <input type="hidden" id="bookId" name="bookId"> <!-- Добавлено имя для передачи bookId -->
     <label for="title">Название:</label>
@@ -28,15 +31,21 @@
 
     <label for="authorFirstName">Имя автора:</label>
     <input type="text" id="authorFirstName" name="authorFirstName" required>
-
+    <br>
     <label for="authorLastName">Фамилия автора:</label>
     <input type="text" id="authorLastName" name="authorLastName" required>
+    <br>
 
-    <label>Факультеты:</label>
-    <div id="facultyContainer"></div> <!-- Контейнер для факультетов -->
+    <div class="dropdown">
+        <button type="button">Выберите факультеты</button>
+        <div class="dropdown-content" id="facultyContainer">
+            <!-- Факультеты будут загружены сюда -->
+        </div>
+    </div>
 
     <button type="submit">Сохранить изменения</button>
 </form>
+</div>
 <footer>
     <p>&copy; 2024 Электронная библиотека</p>
 </footer>
@@ -53,8 +62,14 @@
         document.getElementById('publicationYear').value = book.publicationYear;
         document.getElementById('description').value = book.description;
         document.getElementById('publisher').value = book.publisher;
-        document.getElementById('authorFirstName').value = book.authorFirstName || '';
-        document.getElementById('authorLastName').value = book.authorLastName || '';
+        const authorNames = book.authorNames && book.authorNames[0];
+        if (authorNames) {
+            const [firstName = '', lastName = ''] = authorNames.split(' ');
+            document.getElementById('authorFirstName').value = firstName;
+            document.getElementById('authorLastName').value = lastName;
+        }
+
+
 
         // Предполагается, что у вас есть информация о факультетах в ответе
         if (book.facultyIds) {

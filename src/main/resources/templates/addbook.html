@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Добавить книгу</title>
     <link rel="stylesheet" href="/addbook.css"> <!-- Подключение CSS -->
+    <link rel="stylesheet" href="/navbar.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script>
@@ -12,6 +13,10 @@
             event.preventDefault(); // Предотвращаем стандартное поведение формы
 
             const formData = new FormData(event.target); // Получаем данные формы
+
+            // Получение CSRF токена, если он передан через скрытое поле
+            const csrfToken = document.querySelector('input[name="_csrf"]').value;
+            formData.append('_csrf', csrfToken); // Добавляем CSRF токен в FormData
 
             // Собираем выбранные факультеты
             const selectedFaculties = [];
@@ -38,14 +43,17 @@
             try {
                 const response = await fetch('/api/books/upload', {
                     method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken // Передаем CSRF токен в заголовке
+                    },
                     body: formData
                 });
 
                 const messageElement = document.getElementById('message'); // Элемент для отображения сообщения
 
                 if (response.ok) {
-                    const message = await response.text(); // Получаем текст ответа
-                    messageElement.textContent = message; // Отображаем сообщение
+                    // Получаем текст ответа
+                    messageElement.textContent = await response.text(); // Отображаем сообщение
                     messageElement.style.color = 'green'; // Устанавливаем цвет текста
                     event.target.reset(); // Сбрасываем форму после успешной отправки
                 } else {
@@ -123,41 +131,48 @@
     </script>
 </head>
 <body>
+<div th:replace="~{navbar :: navbar}"></div>
 <h1>Добавить книгу</h1>
 <div id="message"></div> <!-- Блок для отображения сообщения -->
-<form onsubmit="submitForm(event)" enctype="multipart/form-data">
-    <label for="title">
-        <input type="text" name="title" id="title" placeholder="Название книги" required>
-    </label><br>
-    <label for="isbn">
-        <input type="text" name="isbn" id="isbn" placeholder="ISBN" required>
-    </label><br>
-    <label for="publicationYear">
-        <input type="number" name="publicationYear" id="publicationYear" placeholder="Год публикации" required>
-    </label><br>
-    <label for="description">
-        <textarea name="description" id="description" placeholder="Описание" required></textarea>
-    </label><br>
-    <label for="publisher">
-        <input type="text" name="publisher" id="publisher" placeholder="Издатель" required>
-    </label><br>
-    <label>
-        <input type="text" name="authorFirstName" placeholder="Имя автора" required>
-        <input type="text" name="authorLastName" placeholder="Фамилия автора" required>
-    </label><br>
-    <label for="file">
-        <input type="file" name="file" id="file" required><br>
-    </label>
+<div class="container"> <!-- Обернули форму в контейнер -->
+    <form onsubmit="submitForm(event)" enctype="multipart/form-data">
+        <label for="title">
+            <input type="text" name="title" id="title" placeholder="Название книги" required>
+        </label><br>
+        <label for="isbn">
+            <input type="text" name="isbn" id="isbn" placeholder="ISBN" required>
+        </label><br>
+        <label for="publicationYear">
+            <input type="number" name="publicationYear" id="publicationYear" placeholder="Год публикации" required>
+        </label><br>
+        <label for="description">
+            <textarea name="description" id="description" placeholder="Описание" required></textarea>
+        </label><br>
+        <label for="publisher">
+            <input type="text" name="publisher" id="publisher" placeholder="Издатель" required>
+        </label><br>
+        <label>
+            <input type="text" name="authorFirstName" placeholder="Имя автора" required>
+            <br>
+            <input type="text" name="authorLastName" placeholder="Фамилия автора" required>
+        </label><br>
+        <label for="file">
+            <input type="file" name="file" id="file" required><br>
+        </label>
 
-    <div class="dropdown">
-        <button type="button">Выберите факультеты</button>
-        <div class="dropdown-content" id="facultyContainer">
-            <!-- Факультеты будут загружены сюда -->
+        <div class="dropdown">
+            <button type="button">Выберите факультеты</button>
+            <div class="dropdown-content" id="facultyContainer">
+                <!-- Факультеты будут загружены сюда -->
+            </div>
         </div>
-    </div>
 
-    <button type="submit">Добавить книгу</button>
-</form>
+        <!-- CSRF Token -->
+        <input type="hidden" name="_csrf" value="${_csrf.token}"> <!-- Только для серверной страницы -->
+
+        <button type="submit">Добавить книгу</button>
+    </form>
+</div> <!-- Закрываем контейнер -->
 <footer>
     <p>&copy; 2024 Электронная библиотека</p>
 </footer>

@@ -1,126 +1,269 @@
-body {
+html, body {
+    height: 100%;
+    margin: 0;
     font-family: 'Arial', sans-serif;
-    background-image: url('https://fotoblik.ru/wp-content/uploads/2023/09/stol-v-biblioteke-2.webp');
+    background-image: url('/image/4.jpg');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-attachment: fixed; /* Фиксированный фон */
-    margin: 0;
-    padding: 80px 20px; /* Уменьшено паддинг для лучшего отображения на мобильных устройствах */
-    height: 100vh; /* Высота на весь экран */
-    display: flex; /* Используем flex для центрирования содержимого */
-    flex-direction: column; /* Вертикальное направление */
-    justify-content: center; /* Центрируем содержимое по вертикали */
+    background-attachment: fixed;
+    color: #333;
+    display: flex;
+    flex-direction: column;
 }
 
-main {
-    max-width: 800px;
-    margin: auto;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 30px; /* Увеличен паддинг для лучшего восприятия */
-    border-radius: 12px; /* Увеличен радиус скругления */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+* {
+    box-sizing: border-box;
+}
+
+header {
+    text-align: center;
+    margin: 20px 0;
 }
 
 h1 {
-    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
     color: #333;
-    margin-bottom: 20px;
-    font-size: 28px; /* Увеличен размер заголовка */
+    margin: 0 auto;
+    padding: 15px 30px;
+    border-radius: 12px;
+    max-width: 600px;
+    width: fit-content;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+main {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    width: 90%;
+    margin: 0 auto 40px;
+}
+
+/* Стиль для кнопки "Редактировать книги" */
+.edit-books-btn {
+    display: block;
+    width: auto;
+    max-width: 200px;
+    margin: 20px auto;
+    padding: 12px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+    text-align: center;
+    text-decoration: none;
+}
+
+.edit-books-btn:hover {
+    background-color: #0056b3;
+}
+
+footer {
+    text-align: center;
+    padding: 15px 0;
+    background: rgb(0, 123, 255);
+    width: 100%;
+    color: white;
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+#searchButton {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+#searchInput {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+#searchButton:hover {
+    background-color: #0056b3;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin: 20px 0;
 }
 
 th, td {
-    padding: 12px;
+    padding: 12px 15px;
     text-align: left;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #ddd;
 }
 
 th {
     background-color: #007BFF;
     color: white;
-    font-weight: bold; /* Сделать шрифт жирным */
+    font-weight: bold;
+    position: sticky;
+    top: 0;
 }
 
 tr:hover {
-    background-color: #f1f1f1; /* Цвет фона при наведении на строку */
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+tr:nth-child(even) {
+    background-color: rgba(0, 123, 255, 0.02);
+}
+
+tr:nth-child(even):hover {
+    background-color: rgba(0, 123, 255, 0.05);
 }
 
 button {
     background-color: #007BFF;
     color: white;
     border: none;
-    padding: 12px 15px; /* Увеличен паддинг для кнопок */
+    padding: 12px 20px;
     border-radius: 4px;
     cursor: pointer;
-    width: 100%;
-    font-size: 16px; /* Увеличен размер шрифта кнопки */
-    transition: background-color 0.3s ease, transform 0.2s ease; /* Плавный переход для фона и эффекта нажатия */
+    font-size: 16px;
+    transition: all 0.3s ease;
+    display: block;
+    margin: 30px auto 0;
+    max-width: 200px;
 }
 
 button:hover {
-    background-color: #0056b3; /* Цвет кнопки при наведении */
-    transform: translateY(-2px); /* Эффект поднятия кнопки при наведении */
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 label {
     display: block;
-    margin-bottom: 5px;
-    font-weight: normal; /* Уменьшен вес шрифта меток */
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
 }
 
 .faculty-select {
     display: flex;
-    flex-wrap: wrap; /* Позволяет элементам переноситься на новую строку */
-    margin-top: 10px; /* Отступ сверху для факультетов */
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
 }
 
 .faculty-option {
-    padding: 8px;
-    margin: 5px;
+    padding: 8px 12px;
     cursor: pointer;
-    background-color: #fff; /* Цвет по умолчанию для факультетов */
-    border: 1px solid #ccc; /* Граница для факультетов */
-    border-radius: 4px; /* Скругление углов */
-    transition: background-color 0.3s ease, border-color 0.3s ease; /* Плавный переход для фона и границы */
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .faculty-option:hover {
-    background-color: #d0e0ff; /* Цвет фона при наведении на факультет */
-    border-color: #007BFF; /* Цвет границы при наведении */
+    background-color: #e9ecef;
+}
+
+.faculty-option.selected {
+    background-color: #d0e0ff;
+    border-color: #007BFF;
+    color: #0056b3;
 }
 
 #saveRolesButton {
-    margin-top: 20px;
+    margin-top: 30px;
 }
 
-footer {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 14px; /* Размер шрифта для футера */
-    color: #555; /* Цвет текста футера */
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.95);
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Адаптивные стили */
-@media (max-width: 600px) {
-    body {
-        padding: 40px 10px; /* Уменьшение паддинга на мобильных устройствах */
-    }
+#pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    gap: 8px;
+}
 
+#pagination button {
+    margin: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.active {
+    font-weight: bold;
+    background-color: #0056b3;
+    color: white;
+}
+
+td:nth-child(2),
+td:nth-child(3) {
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
     main {
-        padding: 20px; /* Уменьшение паддинга в главном блоке */
+        width: 95%;
+        padding: 20px 15px;
     }
 
+    th, td {
+        padding: 8px 10px;
+        font-size: 14px;
+    }
+
+    .faculty-select {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .faculty-option {
+        padding: 6px 10px;
+    }
+}
+
+@media (max-width: 480px) {
     h1 {
-        font-size: 24px; /* Уменьшение размера заголовка на мобильных устройствах */
+        font-size: 1.5rem;
+        padding: 10px 15px;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 
     button {
-        padding: 10px; /* Уменьшение паддинга для кнопок на мобильных устройствах */
+        width: 100%;
+        max-width: none;
     }
 }

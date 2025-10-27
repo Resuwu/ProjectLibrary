@@ -1,5 +1,7 @@
 package org.example.library.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -40,6 +42,7 @@ public class Book {
     private BookStatus status;
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
+    @JsonManagedReference // Указываем, что это родительская часть
     private List<BookAuthor> bookAuthors;
 
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
@@ -57,6 +60,7 @@ public class Book {
     private Set<Faculty> faculties; // Связь с факультетами
 
     @OneToOne(mappedBy = "book", cascade = CascadeType.ALL)
+    @JsonIgnore // Игнорируем это поле при сериализации
     private BookEntry entry; // Запись о добавлении книги
 
     @Override
@@ -84,4 +88,6 @@ public class Book {
                 ", authorsCount=" + (bookAuthors != null ? bookAuthors.size() : 0) + // Указываем только количество авторов
                 '}';
     }
+
+
 }

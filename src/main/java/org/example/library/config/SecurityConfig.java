@@ -8,9 +8,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -24,15 +27,29 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/users/register", "/api/users/login", "/", "/register", "/login").permitAll()
-                        .requestMatchers("/styles.css", "/*.css").permitAll() // Разрешить доступ ко всем CSS-файлам
-                        .requestMatchers("/api/books/user/**").authenticated() // Разрешить доступ к books только для авторизованных пользователей
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/teacher/**").hasRole("TEACHER")
-                        .requestMatchers("/books/edit").hasAnyRole("ADMIN", "TEACHER")
+
+                        .requestMatchers("/*.css").permitAll()
+                        .requestMatchers("/image/**").permitAll()
+                        .requestMatchers("/api/books/user/**").authenticated()
+                        .requestMatchers("/api/admin/**","/books/edit").hasRole("ADMIN")
+                        .requestMatchers("/api/teacher/**","/books/edit").hasRole("TEACHER")
                         .requestMatchers("/api/student/**").hasRole("STUDENT")
                         .anyRequest().authenticated()
                 )
-                .csrf(csrf -> csrf.disable())
+                // Включите CSRF защиту
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                )
+
+                .logout(logout -> logout
+                        .logoutUrl("/api/users/logout")
+                        .logoutSuccessUrl("/login?logout")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID", "XSRF-TOKEN")
+                        .clearAuthentication(true)
+                        .permitAll()
+                )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
@@ -41,8 +58,11 @@ public class SecurityConfig {
                                 .includeSubDomains(true)
                                 .maxAgeInSeconds(31536000)
                         )
-                        .frameOptions().sameOrigin() // Обратите внимание: этот метод тоже устарел, но может быть временным решением
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)
                 );
+
+        http.csrf().ignoringRequestMatchers("/api/**");
+
 
         return http.build();
     }

@@ -2,9 +2,9 @@ package org.example.library.services;
 
 import jakarta.persistence.EntityNotFoundException;
 import org.example.library.models.*;
-import org.example.library.repositories.BookEntryRepository;
 import org.example.library.repositories.BookRepository;
 import org.example.library.repositories.EbookRepository;
+import org.example.library.repositories.BookEntryRepository; // Импортируйте BookEntryRepository
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -95,7 +95,7 @@ public class BookService {
         return bookRepository.findByFaculty(faculty);
     }
 
-    public List<Book> getBooksForUser(LibraryUser user) {
+    public List<Book> getBooksForUser (LibraryUser  user) {
         logger.info("Fetching books for user: {}", user.getUsername());
 
         if (user.getFaculties().isEmpty()) {
@@ -109,7 +109,7 @@ public class BookService {
 
     // Код из файла: C:\Users\Дмитрий\IdeaProjects\ProjectLibrary\src\main\java\org\example\library\services\BookService.java
 
-    public boolean isBookAddedByUser(Long bookId, String username) {
+    public boolean isBookAddedByUser (Long bookId, String username) {
         Book book = getBookById(bookId);
         return book.getEntry().getAddedBy().getUsername().equals(username);
     }
@@ -118,7 +118,6 @@ public class BookService {
 
     public Book updateBook(Book book) {
         // Здесь вы можете добавить логику для проверки, является ли пользователь преподавателем и добавил ли он эту книгу
-        logger.debug("Method updateBook with parameters: book {} ", book);
         return bookRepository.save(book); // Сохраняем обновленную книгу
     }
 

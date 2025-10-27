@@ -38,12 +38,11 @@ public class FacultyController {
     // Метод для получения уникального идентификатора для каждого типа факультета
     private Long getFacultyId(FacultyType facultyType) {
         return switch (facultyType) {
-            case SCIENCE -> 1L;
+            case COMMON -> 1L;
             case ARTS -> 2L;
             case ENGINEERING -> 3L;
             case BUSINESS -> 4L;
-            case COMMON -> 5L;
-            default -> throw new IllegalArgumentException("Unknown faculty type: " + facultyType);
+            case SCIENCE -> 5L;
         };
     }
 

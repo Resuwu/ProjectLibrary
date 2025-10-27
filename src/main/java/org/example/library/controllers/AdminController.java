@@ -3,18 +3,17 @@ package org.example.library.controllers;
 import org.example.library.models.Book;
 import org.example.library.models.DTO.UserDTO;
 import org.example.library.models.DTO.UserRoleUpdateDTO;
-import org.example.library.models.LibraryUser;
-import org.example.library.models.Role;
+import org.example.library.models.LibraryUser ;
 import org.example.library.services.AdminService;
-import org.example.library.services.BookService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.example.library.services.BookService; // Импортируйте BookService
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.example.library.models.Role; // Добавьте этот импорт
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/admin")
 public class AdminController {
 
-    private final Logger logger = LoggerFactory.getLogger(AdminController.class);
     @Autowired
     private AdminService adminService;
 
@@ -32,17 +30,16 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')") // Ограничение доступа для администраторов
     @PostMapping("/users")
-    public ResponseEntity<LibraryUser> createUser(@RequestBody LibraryUser user) {
-        logger.trace("Method createUser with parameters: user {} ", user);
-        LibraryUser createdUser = adminService.createUser(user);
-        return ResponseEntity.ok(createdUser);
+    public ResponseEntity<LibraryUser > createUser (@RequestBody LibraryUser  user) {
+        LibraryUser  createdUser  = adminService.createUser (user);
+        return ResponseEntity.ok(createdUser );
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/assign-role/{userId}/{roleId}")
-    public ResponseEntity<Void> assignRoleToUser(@PathVariable Long userId, @PathVariable Long roleId) {
+    public ResponseEntity<Void> assignRoleToUser (@PathVariable Long userId, @PathVariable Long roleId) {
         System.out.println("Попытка назначения роли пользователю с ID: " + userId + " и ролью с ID: " + roleId);
-        adminService.assignRoleToUser(userId, roleId);
+        adminService.assignRoleToUser (userId, roleId);
         return ResponseEntity.ok().build();
     }
 
@@ -53,7 +50,7 @@ public class AdminController {
         System.out.println("Authenticated user: " + authentication.getName());
         System.out.println("Authorities: " + authentication.getAuthorities());
 
-        List<LibraryUser> users = adminService.getAllUsers();
+        List<LibraryUser > users = adminService.getAllUsers();
 
         // Преобразование LibraryUser  в UserDTO
         List<UserDTO> userDTOs = users.stream()
@@ -75,8 +72,8 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/assign-faculty/{userId}/{facultyId}")
-    public ResponseEntity<Void> assignFacultyToUser(@PathVariable Long userId, @PathVariable Long facultyId) {
-        adminService.assignFacultyToUser(userId, facultyId);
+    public ResponseEntity<Void> assignFacultyToUser (@PathVariable Long userId, @PathVariable Long facultyId) {
+        adminService.assignFacultyToUser (userId, facultyId);
         return ResponseEntity.ok().build();
     }
 
@@ -84,14 +81,13 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')") // Ограничение доступа для администраторов
     @PostMapping("/add-book")
     public ResponseEntity<Book> addBook(@RequestParam String title, @RequestParam Long authorId) {
-        logger.trace("Method addBook with parameters: title {} authorId {} ", title, authorId);
         Book book = new Book();
         book.setTitle(title);
         // Установите другие свойства книги, если нужно
 
         // Получаем текущего аутентифицированного пользователя
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        LibraryUser addedBy = (LibraryUser) authentication.getPrincipal(); // Предполагается, что вы используете LibraryUser  как UserDetails
+        LibraryUser  addedBy = (LibraryUser ) authentication.getPrincipal(); // Предполагается, что вы используете LibraryUser  как UserDetails
 
         // Сохраняем книгу с записью о добавлении
         Book savedBook = bookService.uploadBook(book, addedBy);

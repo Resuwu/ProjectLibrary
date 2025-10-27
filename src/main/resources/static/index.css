@@ -1,6 +1,6 @@
 body {
     font-family: 'Arial', sans-serif; /* Можно заменить на 'Roboto', если подключите Google Fonts */
-    background-image: url('https://fotoblik.ru/wp-content/uploads/2023/09/poema-zoia-margarity-aliger-7.webp');
+    background-image: url('/image/6.jpg');
     background-size: cover; /* Фон будет покрывать весь экран */
     background-position: center; /* Центрирование фона */
     background-repeat: no-repeat; /* Убираем повторение фона */
@@ -15,7 +15,9 @@ body {
 
 header {
     text-align: center;
-    margin-bottom: 30px; /* Увеличиваем отступ для большего пространства */
+    margin-bottom: 10px;
+    padding-bottom: 20px; /* Увеличиваем отступ для большего пространства */
+    background: rgba(255, 255, 255, 0.9); /* Полупрозрачный фон */
 }
 
 nav {
@@ -47,8 +49,10 @@ main {
 
 footer {
     text-align: center;
-    margin-top: 20px; /* Увеличиваем отступ сверху */
-    color: #555; /* Цвет текста в футере */
+    padding: 1px 0;
+    color: #555;
+    background: rgba(255, 255, 255, 0.9);
+    margin-top: auto; /* Это закрепит футер внизу */
 }
 
 /* Добавим медиа-запрос для адаптивности */

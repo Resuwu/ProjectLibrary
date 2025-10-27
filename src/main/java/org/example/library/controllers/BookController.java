@@ -1,29 +1,29 @@
 package org.example.library.controllers;
 
-import org.example.library.models.*;
 import org.example.library.models.DTO.BookDTO;
+import org.example.library.models.*;
 import org.example.library.services.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.bind.annotation.GetMapping;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/books")
 public class BookController {
 
-    private final Logger logger = LoggerFactory.getLogger(BookController.class);
     @Autowired
     private BookService bookService;
 
@@ -47,36 +46,44 @@ public class BookController {
     @Autowired
     private CustomUserDetailsService customUserDetailsService;  // Внедрение зависимости
 
-    @Value("${file.upload-dir}") // Внедряем путь из application.properties
-    private String uploadDir;
-
 
     // Получение всех книг
     @GetMapping("/all")
-    public ResponseEntity<List<BookDTO>> getAllBooks(Authentication authentication) {
-        LibraryUser currentUser = userService.findByUsername(authentication.getName());
-        List<Book> books = bookService.getBooksForUser(currentUser); // Получаем книги для текущего пользователя
-        List<BookDTO> bookDTOs = books.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public ResponseEntity<Page<BookDTO>> getAllBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Book> books = bookService.getAllBooks(page, size); // Получаем страницу книг
+        Page<BookDTO> bookDTOs = books.map(this::convertToDTO); // Преобразуем в DTO
         return ResponseEntity.ok(bookDTOs);
     }
 
 
-    // Поиск книг по заголовку
+    // Поиск книг
     @GetMapping("/search")
-    public ResponseEntity<List<BookDTO>> searchBooks(@RequestParam String title) {
-        logger.trace("Method searchBooks with parameters: title {} ", title);
-        List<Book> books = bookService.searchBooks(title);
-        List<BookDTO> bookDTOs = books.stream().map(this::convertToDTO).collect(Collectors.toList());
+    public ResponseEntity<Page<BookDTO>> searchBooks(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Book> books;
+
+        if (query != null && !query.isEmpty()) {
+            books = bookService.searchBooks(query, page, size);
+        } else {
+            books = bookService.getAllBooks(page, size);
+        }
+        Page<BookDTO> bookDTOs = books.map(this::convertToDTO);
         return ResponseEntity.ok(bookDTOs);
     }
+
+
 
     // Получение книги по ID
     @GetMapping("/{id}")
     public ResponseEntity<BookDTO> getBookById(@PathVariable Long id) {
-        logger.trace("Method getBookById with parameters: id {} ", id);
         Book book = bookService.getBookById(id);
         return book != null ? ResponseEntity.ok(convertToDTO(book)) : ResponseEntity.notFound().build();
     }
+
 
 
     // Загрузка новой книги
@@ -93,13 +100,13 @@ public class BookController {
             @RequestParam List<Long> facultyIds,
             Authentication authentication) {
 
-        LibraryUser currentUser = userService.findByUsername(authentication.getName());
+        LibraryUser  currentUser  = userService.findByUsername(authentication.getName());
 
-        if (currentUser == null) {
+        if (currentUser  == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Пользователь не найден.");
         }
 
-        boolean isAuthorized = currentUser.getRoles().stream()
+        boolean isAuthorized = currentUser .getRoles().stream()
                 .anyMatch(role -> role.getRoleName().equals("TEACHER") || role.getRoleName().equals("ADMIN"));
 
         if (!isAuthorized) {
@@ -145,6 +152,7 @@ public class BookController {
         if (faculties.isEmpty()) {
             return ResponseEntity.badRequest().body("Некоторые факультеты не найдены.");
         }
+
         book.setFaculties(faculties);
 
         BookAuthor bookAuthor = new BookAuthor();
@@ -153,7 +161,7 @@ public class BookController {
         book.setBookAuthors(Collections.singletonList(bookAuthor));
 
         try {
-            bookService.uploadBook(book, currentUser); // Передаем текущего пользователя
+            bookService.uploadBook(book, currentUser ); // Передаем текущего пользователя
             Ebook ebook = new Ebook();
             ebook.setFileLocation(fileLocation);
             ebook.setBook(book);
@@ -167,29 +175,28 @@ public class BookController {
 
 
     // Сохранение файла на сервере
-    private String saveFile(MultipartFile file) throws IOException { // Добавили throws IOException
+    private String saveFile(MultipartFile file) {
         if (file == null || file.getOriginalFilename() == null) {
             throw new IllegalArgumentException("Файл не должен быть null и должен иметь имя.");
         }
-        try {
-            // Создаем Path для директории загрузок
-            Path uploadPath = Paths.get(uploadDir);
 
-            // Создаем директорию, если она не существует
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+        try {
+            // Получаем путь к корню проекта
+            String projectRoot = new File("").getAbsolutePath();
+            String directory = projectRoot + "/src/main/resources/Storage";
+
+            File dir = new File(directory);
+            if (!dir.exists() && !dir.mkdirs()) {
+                throw new IOException("Не удалось создать директорию: " + dir.getAbsolutePath());
             }
 
-            // Формируем полный путь к файлу
-            String fileName = file.getOriginalFilename();
-            Path filePath = uploadPath.resolve(fileName);
+            String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+            File destinationFile = new File(dir, fileName);
 
-            // Сохраняем файл
-            Files.copy(file.getInputStream(), filePath);
-
-            return filePath.toString(); // Возвращаем абсолютный путь к файлу в виде строки
+            file.transferTo(destinationFile);
+            return destinationFile.getAbsolutePath();
         } catch (IOException e) {
-            throw new IOException("Ошибка при сохранении файла: " + e.getMessage(), e);
+            throw new RuntimeException("Ошибка при сохранении файла: " + e.getMessage(), e);
         }
     }
 
@@ -199,7 +206,7 @@ public class BookController {
     public ResponseEntity<FileSystemResource> getBookContent(@PathVariable Long id) throws IOException {
         // Получите книгу из базы данных
         Book book = bookService.getBookById(id);
-        if (book == null || book.getEbooks() == null || book.getEbooks().isEmpty()) { // Добавлена проверка на null для getEbooks()
+        if (book == null || book.getEbooks().isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -208,12 +215,11 @@ public class BookController {
         File pdfFile = new File(ebook.getFileLocation());
 
         if (!pdfFile.exists()) {
-            System.err.println("Файл не найден по пути: " + ebook.getFileLocation()); // Лог ошибки
             return ResponseEntity.notFound().build();
         }
 
         // Кодируем имя файла
-        String encodedFileName = URLEncoder.encode(pdfFile.getName(), StandardCharsets.UTF_8); // Используем StandardCharsets.UTF_8.toString()
+        String encodedFileName = URLEncoder.encode(pdfFile.getName(), StandardCharsets.UTF_8);
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + encodedFileName + "\"");
@@ -244,44 +250,80 @@ public class BookController {
                 book.getPublicationYear(),
                 book.getDescription(),
                 book.getPublisher(),
-                book.getStatus().name(), // Преобразуем статус в строку
+                book.getStatus().name(),
                 authorNames
         );
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<BookDTO>> getBooksForUser(@PathVariable Long userId) {
-        logger.trace("Method getBooksForUser with parameters: userId {} ", userId);
-        System.out.println("Полученный userId: " + userId);
+    public ResponseEntity<Page<BookDTO>> getBooksForUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String filter,
+            @RequestParam(required = false, defaultValue = "title") String sort,
+            @RequestParam(required = false, defaultValue = "asc") String direction) {
 
-        if (userId <= 0) {
-            return ResponseEntity.badRequest().body(Collections.emptyList()); // Неверный userId
+        LibraryUser user = userService.findById(userId);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
         }
 
-        LibraryUser currentUser = userService.findById(userId);
-        if (currentUser == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.emptyList());
+        List<Book> books = bookService.getBooksForUser(user);
+
+        // 🔎 Фильтрация (по названию или автору)
+        if (filter != null && !filter.isEmpty()) {
+            String lowerCaseFilter = filter.toLowerCase();
+            books = books.stream().filter(book ->
+                    book.getTitle().toLowerCase().contains(lowerCaseFilter) ||
+                            book.getBookAuthors().stream()
+                                    .map(bookAuthor -> (bookAuthor.getAuthor().getFirstName() + " " + bookAuthor.getAuthor().getLastName()).toLowerCase())
+                                    .anyMatch(authorName -> authorName.contains(lowerCaseFilter))
+            ).collect(Collectors.toList());
         }
 
-        try {
-            List<Book> books = bookService.getBooksForUser(currentUser);
-            List<BookDTO> bookDTOs = books.stream().map(this::convertToDTO).collect(Collectors.toList());
-            return ResponseEntity.ok(bookDTOs);
-        } catch (Exception e) {
-            // Логируем ошибку (например, через Logger)
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
+
+        // ↕ Сортировка
+        // ↕ Сортировка
+        Comparator<Book> comparator = switch (sort) {
+            case "year" -> Comparator.comparing(Book::getPublicationYear);
+            case "title" -> Comparator.comparing(Book::getTitle, String.CASE_INSENSITIVE_ORDER);
+            case "author" -> Comparator.comparing(book ->
+                    book.getBookAuthors().stream()
+                            .map(bookAuthor -> bookAuthor.getAuthor().getFirstName() + " " + bookAuthor.getAuthor().getLastName())
+                            .collect(Collectors.joining(" ")), String.CASE_INSENSITIVE_ORDER);
+            case "publisher" -> Comparator.comparing(Book::getPublisher, String.CASE_INSENSITIVE_ORDER);
+            default -> Comparator.comparing(Book::getTitle, String.CASE_INSENSITIVE_ORDER);
+        };
+
+
+        if (direction.equalsIgnoreCase("desc")) {
+            comparator = comparator.reversed();
         }
+
+        books.sort(comparator);
+
+        //  Пагинация
+        int start = (int) PageRequest.of(page, size).getOffset();
+        int end = Math.min((start + size), books.size());
+        Page<Book> bookPage = new PageImpl<>(books.subList(start, end), PageRequest.of(page, size), books.size());
+
+        Page<BookDTO> bookDTOs = bookPage.map(this::convertToDTO);
+        return ResponseEntity.ok(bookDTOs);
     }
+
+
+
+// Код из файла: C:\Users\Дмитрий\IdeaProjects\ProjectLibrary\src\main\java\org\example\library\controllers\BookController.java
 
     @PreAuthorize("hasRole('ADMIN') or (hasRole('TEACHER') and @bookService.isBookAddedByUser (#id, principal.username))")
     @GetMapping("/edit/{id}")
     public ResponseEntity<BookDTO> editBook(@PathVariable Long id) {
-        logger.trace("Method editBook with parameters: id {} ", id);
         Book book = bookService.getBookById(id);
         return ResponseEntity.ok(convertToDTO(book));
     }
 
-    @PreAuthorize("hasRole('ADMIN') or (hasRole('TEACHER') and @bookService.isBookAddedByUser (#bookId, principal.username))")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('TEACHER') and @bookService.isBookAddedByUser  (#bookId, principal.username))")
     @PostMapping("/update")
     public ResponseEntity<String> updateBook(
             @RequestParam Long bookId,
@@ -324,36 +366,11 @@ public class BookController {
         // Обработка файла, если он был загружен
         if (file != null && !file.isEmpty()) {
             try {
-                // Удаляем старый файл, если он есть и если загружается новый
-                if (book.getEbooks() != null && !book.getEbooks().isEmpty()) {
-                    Ebook oldEbook = book.getEbooks().getFirst();
-                    if (oldEbook != null && oldEbook.getFileLocation() != null) {
-                        try {
-                            Files.deleteIfExists(Paths.get(oldEbook.getFileLocation()));
-                            // Рассмотрите удаление записи Ebook из БД или обновление fileLocation
-                        } catch (IOException e) {
-                            System.err.println("Не удалось удалить старый файл: " + oldEbook.getFileLocation() + " - " + e.getMessage());
-                        }
-                    }
-                }
-
                 String fileLocation = saveFile(file);
-                // Если у книги уже есть Ebook, обновляем его. Иначе создаем новый.
-                Ebook ebook;
-                if (book.getEbooks() != null && !book.getEbooks().isEmpty()) {
-                    ebook = book.getEbooks().getFirst();
-                    ebook.setFileLocation(fileLocation);
-                } else {
-                    ebook = new Ebook();
-                    ebook.setFileLocation(fileLocation);
-                    ebook.setBook(book);
-                    if (book.getEbooks() == null) {
-                        book.setEbooks(new ArrayList<>());
-                    }
-                    book.getEbooks().add(ebook);
-                }
-                bookService.saveEbook(ebook); // Сохраняем или обновляем Ebook
-
+                Ebook ebook = new Ebook();
+                ebook.setFileLocation(fileLocation);
+                ebook.setBook(book);
+                bookService.saveEbook(ebook);
             } catch (Exception e) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при сохранении файла: " + e.getMessage());
             }
@@ -367,18 +384,10 @@ public class BookController {
             author.setLastName(authorLastName);
             authorService.saveAuthor(author);
         }
-        // Обновление связи BookAuthor (если она изменилась)
-        // Текущая логика предполагает одного автора на книгу, если это не так, ее нужно будет расширить
-        if (book.getBookAuthors() != null && !book.getBookAuthors().isEmpty()) {
-            book.getBookAuthors().getFirst().setAuthor(author);
-        } else {
-            BookAuthor bookAuthor = new BookAuthor();
+
+        // Обновление связей BookAuthor
+        for (BookAuthor bookAuthor : book.getBookAuthors()) {
             bookAuthor.setAuthor(author);
-            bookAuthor.setBook(book);
-            if (book.getBookAuthors() == null) {
-                book.setBookAuthors(new ArrayList<>());
-            }
-            book.getBookAuthors().add(bookAuthor);
         }
 
 
@@ -388,8 +397,8 @@ public class BookController {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
 
-        if (faculties.isEmpty()) { // Может быть ситуация, когда все facultyIds невалидны
-            return ResponseEntity.badRequest().body("Факультеты не найдены или не выбраны.");
+        if (faculties.isEmpty()) {
+            return ResponseEntity.badRequest().body("Некоторые факультеты не найдены.");
         }
 
         book.setFaculties(faculties);
@@ -397,5 +406,5 @@ public class BookController {
 
         return ResponseEntity.ok("Книга успешно обновлена!");
     }
-}
 
+}

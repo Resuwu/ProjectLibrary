@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Навигация</title>
+    <link rel="stylesheet" href="/navbar.css">
+</head>
+<body>
+<nav th:fragment="navbar" class="navbar">
+    <div class="navbar-brand">
+        <a href="/">Электронная библиотека</a>
+    </div>
+    <div class="nav-links">
+        <a href="/books" class="nav-link">Книги</a>
+        <a sec:authorize="hasRole('TEACHER') or hasRole('ADMIN')" href="/add-book" class="nav-link">Добавить книгу</a>
+        <a sec:authorize="hasRole('TEACHER') or hasRole('ADMIN')" href="/books-edit" class="nav-link">Редактировать книги</a>
+        <a sec:authorize="hasRole('ADMIN')" href="/admin" class="nav-link">Управление пользователями</a>
+    </div>
+    <div class="user-section">
+        <span id="username-display"></span>
+        <form id="logoutForm" action="/api/users/logout" method="post" style="display: inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="logout-btn">Выйти</button>
+        </form>
+    </div>
+</nav>
+
+<script>
+    // Загрузка информации о текущем пользователе
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch('/api/users/current');
+            if (response.ok) {
+                const user = await response.json();
+                document.getElementById('username-display').textContent = user.username;
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке пользователя:', error);
+        }
+    });
+
+    // Обработчик выхода
+    document.getElementById('logout-btn').addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        try {
+            // 1. Получаем CSRF токен
+            const getCsrfToken = () => {
+                const cookie = document.cookie.split('; ')
+                    .find(row => row.startsWith('XSRF-TOKEN='));
+                return cookie ? cookie.split('=')[1] : null;
+            };
+
+            const csrfToken = getCsrfToken();
+            if (!csrfToken) {
+                console.error('CSRF токен не найден');
+                window.location.href = '/login';
+                return;
+            }
+
+            // 2. Отправляем запрос на выход
+            const response = await fetch('/api/users/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-XSRF-TOKEN': csrfToken
+                },
+                credentials: 'include'
+            });
+
+            // 3. Обрабатываем ответ
+            if (response.ok) {
+                // Принудительно очищаем все возможные cookies
+                document.cookie.split(';').forEach(cookie => {
+                    const [name] = cookie.split('=');
+                    document.cookie = `${name.trim()}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+                });
+
+                // Перенаправляем на страницу входа
+                window.location.href = '/login';
+            } else {
+                const error = await response.text();
+                console.error('Ошибка при выходе:', error);
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            console.error('Ошибка при выходе:', error);
+            window.location.href = '/login';
+        }
+    });
+</script>
+</body>
+</html>

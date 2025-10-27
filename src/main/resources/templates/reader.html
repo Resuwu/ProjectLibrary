@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Чтение книги</title>
-    <link rel="stylesheet" href="/reader.css"> <!-- Подключение CSS -->
+    <link rel="stylesheet" href="/reader.css">
+    <link rel="stylesheet" href="/navbar.css"><!-- Подключение CSS -->
 </head>
 <body>
+<div th:replace="~{navbar :: navbar}"></div>
 <header>
     <h1 id="bookTitle">Читальный зал</h1>
 </header>
@@ -14,7 +16,6 @@
     <div id="bookContent">
         <iframe id="pdfViewer" width="100%" height="1199px" style="border: none;"></iframe>
     </div>
-    <button id="backButton">Назад к списку книг</button>
 </main>
 <script>
     const urlParams = new URLSearchParams(window.location.search);

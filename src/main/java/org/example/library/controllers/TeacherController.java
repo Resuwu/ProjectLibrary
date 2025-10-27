@@ -2,12 +2,11 @@ package org.example.library.controllers;
 
 import org.example.library.models.Book;
 import org.example.library.models.BookEntry;
-import org.example.library.models.LibraryUser;
+import org.example.library.models.LibraryUser ;
 import org.example.library.services.BookService;
 import org.example.library.services.UserService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,7 +20,6 @@ import java.util.List;
 @RequestMapping("/api/teacher")
 public class TeacherController {
 
-    private final Logger logger = LoggerFactory.getLogger(TeacherController.class);
     @Autowired
     private BookService bookService;
 
@@ -30,9 +28,10 @@ public class TeacherController {
 
     @PreAuthorize("hasRole('TEACHER')") // Ограничение доступа для преподавателей
     @GetMapping("/books")
-    public ResponseEntity<List<Book>> getAllBooks() {
-        logger.trace("getAllBooks");
-        List<Book> books = bookService.searchBooks(""); // Получаем все книги, можно добавить фильтрацию
+    public ResponseEntity<Page<Book>> getAllBooks(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Book> books = bookService.getAllBooks(page, size); // Используем пагинацию
         return ResponseEntity.ok(books);
     }
 
@@ -55,6 +54,8 @@ public class TeacherController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(newBook);
     }
+
+
 
     // Другие методы для преподавателя можно добавить здесь
 }

@@ -34,8 +34,9 @@ public class ViewController {
     }
 
     @GetMapping("/books")
-    public String viewBooks(Model model) {
-        return "books"; // Возврат имени шаблона для отображения списка книг
+    public String viewBooks(Model model, Principal principal) {
+        addCurrentUserToModel(model);
+        return "books";
     }
 
     @GetMapping("/books/read")
@@ -55,14 +56,16 @@ public class ViewController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
-    public String adminPage(Model model) {
-        return "admin"; // Возврат имени шаблона для отображения страницы администратора
+    public String adminPage(Model model, Principal principal) {
+        addCurrentUserToModel(model);
+        return "admin";
     }
 
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/add-book")
-    public String addBook(Model model) {
-        return "addbook"; // Возврат имени шаблона для отображения страницы преподавателя
+    public String addBook(Model model, Principal principal) {
+        addCurrentUserToModel(model);
+        return "addbook";
     }
 
     // Метод для добавления текущего пользователя в модель
@@ -70,36 +73,29 @@ public class ViewController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()) {
             String username = authentication.getName();
-            LibraryUser  user = userService.findByUsername(username);
-            model.addAttribute("currentUser", user); // Убедитесь, что пробел после "currentUser " отсутствует
+            LibraryUser user = userService.findByUsername(username);
+            model.addAttribute("currentUser", user);
         }
     }
 
-    @GetMapping("/actions")
-    public String getActionsPage(Model model, Principal principal) {
-        LibraryUser  currentUser  = userService.findByUsername(principal.getName());
-        List<String> roles = currentUser .getRoles().stream()
-                .map(Role::getRoleName)
-                .collect(Collectors.toList());
-        model.addAttribute("roles", roles);
-        return "actions"; // Возвращает имя шаблона (например, actions.html)
-    }
+
 
 
     @GetMapping("/books-edit")
-    public String editBooks() {
-        return "books-edit"; // Это будет искать файл в src/main/resources/templates
+    public String editBooks(Model model, Principal principal) {
+        addCurrentUserToModel(model);
+        return "books-edit";
     }
 
+
     @GetMapping("/books/edit")
-    public String editBook(@RequestParam("id") Long bookId, Model model) {
-        Book book = bookService.getBookById(bookId); // Используйте getBookById
-        if (book != null) {
-            model.addAttribute("book", book); // Добавьте книгу в модель, чтобы использовать в шаблоне
-            return "editbook"; // Возврат имени шаблона для редактирования книги
-        } else {
-            return "redirect:/books-edit"; // Перенаправление, если книга не найдена
-        }
+    public String editBook(@RequestParam("id") Long bookId, Model model, Principal principal) {
+        addCurrentUserToModel(model);
+        Book book = bookService.getBookById(bookId);
+        model.addAttribute("book", book);
+        return "editbook";
     }
+
+
 
 }
